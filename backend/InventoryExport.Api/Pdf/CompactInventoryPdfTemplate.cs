@@ -1,11 +1,14 @@
+using InventoryExport.Api.Dtos;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 
 namespace InventoryExport.Api.Pdf;
 
-public sealed class CompactInventoryPdfTemplate
+public sealed class CompactInventoryPdfTemplate : IInventoryPdfTemplate
 {
+    public PdfTemplateType TemplateType => PdfTemplateType.Compact;
+
     public byte[] Generate(InventoryExportDocument document)
     {
         return Document.Create(container =>

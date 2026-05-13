@@ -32,8 +32,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IExportService, ExportService>();
-builder.Services.AddScoped<ClassicInventoryPdfTemplate>();
-builder.Services.AddScoped<CompactInventoryPdfTemplate>();
+builder.Services.AddScoped<IInventoryPdfTemplate, ClassicInventoryPdfTemplate>();
+builder.Services.AddScoped<IInventoryPdfTemplate, CompactInventoryPdfTemplate>();
 
 var app = builder.Build();
 
@@ -56,9 +56,4 @@ app.Run();
 
 public partial class Program
 {
-}
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }

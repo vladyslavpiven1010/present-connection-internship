@@ -8,8 +8,7 @@ namespace InventoryExport.Api.Services;
 
 public sealed class ExportService(
     AppDbContext dbContext,
-    ClassicInventoryPdfTemplate classicTemplate,
-    CompactInventoryPdfTemplate compactTemplate) : IExportService
+    IEnumerable<IInventoryPdfTemplate> templates) : IExportService
 {
     public async Task<byte[]> GeneratePdfAsync(ExportPdfRequest request, CancellationToken cancellationToken)
     {
@@ -26,10 +25,9 @@ public sealed class ExportService(
             GeneratedAt: DateTimeOffset.UtcNow,
             AppliedFilter: request.ToFilter());
 
-        return request.Template switch
-        {
-            PdfTemplateType.Compact => compactTemplate.Generate(document),
-            _ => classicTemplate.Generate(document)
-        };
+        var template = templates.FirstOrDefault(template => template.TemplateType == request.Template)
+            ?? throw new InvalidOperationException($"PDF template '{request.Template}' is not registered.");
+
+        return template.Generate(document);
     }
 }

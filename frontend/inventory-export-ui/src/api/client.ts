@@ -1,4 +1,5 @@
 import type { InventoryFilters, InventoryItem, PdfTemplate, User } from "../types";
+import { apiEndpoints, downloadFileNames } from "./endpoints";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -25,16 +26,16 @@ async function request<T>(path: string): Promise<T> {
 }
 
 export function getUsers(): Promise<User[]> {
-  return request<User[]>("/users");
+  return request<User[]>(apiEndpoints.users);
 }
 
 export function getInventoryItems(filters: InventoryFilters): Promise<InventoryItem[]> {
   const params = toSearchParams(filters);
-  return request<InventoryItem[]>(`/inventory-items?${params}`);
+  return request<InventoryItem[]>(`${apiEndpoints.inventoryItems}?${params}`);
 }
 
 export async function softDeleteInventoryItem(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/inventory-items/${id}`, {
+  const response = await fetch(`${API_BASE_URL}${apiEndpoints.inventoryItemById(id)}`, {
     method: "DELETE"
   });
 
@@ -43,7 +44,7 @@ export async function softDeleteInventoryItem(id: string): Promise<void> {
 
 export async function exportInventoryPdf(filters: InventoryFilters, template: PdfTemplate): Promise<void> {
   const params = toSearchParams(filters, template);
-  const response = await fetch(`${API_BASE_URL}/export/pdf?${params}`);
+  const response = await fetch(`${API_BASE_URL}${apiEndpoints.exportPdf}?${params}`);
 
   if (!response.ok) throw new Error(`Export failed: ${response.status}`);
 
@@ -51,7 +52,7 @@ export async function exportInventoryPdf(filters: InventoryFilters, template: Pd
   const href = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = href;
-  link.download = `inventory-export-${template.toLowerCase()}.pdf`;
+  link.download = downloadFileNames.inventoryExportPdf(template);
   document.body.appendChild(link);
   link.click();
   link.remove();

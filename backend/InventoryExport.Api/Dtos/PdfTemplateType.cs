@@ -2,6 +2,6 @@ namespace InventoryExport.Api.Dtos;
 
 public enum PdfTemplateType
 {
-    Classic,
-    Compact
+    Classic = 1,
+    Compact = 2
 }

@@ -1,13 +1,16 @@
+using System.ComponentModel.DataAnnotations;
 using InventoryExport.Api.Entities;
 
 namespace InventoryExport.Api.Dtos;
 
-public sealed class ExportPdfRequest
+public sealed class ExportPdfRequest : IValidatableObject
 {
+    [Required]
     public PdfTemplateType Template { get; init; } = PdfTemplateType.Classic;
 
     public InventoryItemType? Type { get; init; }
 
+    [StringLength(200)]
     public string? Comment { get; init; }
 
     public Guid? UserId { get; init; }
@@ -18,4 +21,21 @@ public sealed class ExportPdfRequest
         Comment = Comment,
         UserId = UserId
     };
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (!Enum.IsDefined(Template))
+        {
+            yield return new ValidationResult(
+                "Unknown PDF template.",
+                [nameof(Template)]);
+        }
+
+        if (Type is not null && !Enum.IsDefined(Type.Value))
+        {
+            yield return new ValidationResult(
+                "Unknown inventory item type.",
+                [nameof(Type)]);
+        }
+    }
 }
