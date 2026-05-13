@@ -1,7 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { exportInventoryPdf, getInventoryItems, softDeleteInventoryItem } from "../api/client";
 import { StatusBadge } from "../components/StatusBadge";
 import { TemplateDialog } from "../components/TemplateDialog";
+import { Button } from "../components/ui/Button";
+import { DataTable, TableCell, TableHeaderCell, TableWrap } from "../components/ui/DataTable";
+import { ErrorBanner } from "../components/ui/ErrorBanner";
+import { Field, Select, TextInput } from "../components/ui/Field";
+import { PagePanel, PanelHeader } from "../components/ui/PagePanel";
+import { Pagination } from "../components/ui/Pagination";
+import { pagination } from "../constants/pagination";
 import { formatItemType, itemTypes, type InventoryFilters, type InventoryItem, type PdfTemplate, type User } from "../types";
 
 interface InventoryPageProps {
@@ -14,17 +21,19 @@ const initialFilters: InventoryFilters = {
   userId: ""
 };
 
-const tableHeaderClass = "border-b border-slate-200 bg-slate-50 px-4 py-3.5 text-left text-xs font-extrabold uppercase text-slate-500";
-const tableCellClass = "border-b border-slate-200 px-4 py-3.5";
-const controlClass = "min-h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-slate-900 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10";
-
 export function InventoryPage({ users }: InventoryPageProps) {
   const [filters, setFilters] = useState<InventoryFilters>(initialFilters);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isExportDialogOpen, setExportDialogOpen] = useState<boolean>(false);
   const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const [error, setError] = useState<string | null>(null);
+  const totalPages = Math.max(1, Math.ceil(items.length / pagination.inventoryItemsPageSize));
+  const paginatedItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * pagination.inventoryItemsPageSize;
+    return items.slice(startIndex, startIndex + pagination.inventoryItemsPageSize);
+  }, [currentPage, items]);
 
   async function loadItems() {
     setIsLoading(true);
@@ -41,8 +50,15 @@ export function InventoryPage({ users }: InventoryPageProps) {
   }
 
   useEffect(() => {
+    setCurrentPage(1);
     void loadItems();
   }, [filters.type, filters.comment, filters.userId]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   async function handleSoftDelete(id: string) {
     setError(null);
@@ -70,25 +86,20 @@ export function InventoryPage({ users }: InventoryPageProps) {
   }
 
   return (
-    <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl shadow-slate-900/10">
-      <div className="flex flex-col gap-5 border-b border-slate-200 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Inventory items</h1>
-          <p className="mt-1 text-slate-500">Filter assigned devices and export the active subset to PDF.</p>
-        </div>
-        <button
-          className="min-h-10 w-full rounded-md bg-blue-600 px-4 font-extrabold text-white sm:w-auto"
-          onClick={() => setExportDialogOpen(true)}
-        >
-          Export PDF
-        </button>
-      </div>
+    <PagePanel>
+      <PanelHeader
+        action={
+          <Button className="w-full sm:w-auto" onClick={() => setExportDialogOpen(true)}>
+            Export PDF
+          </Button>
+        }
+        description="Filter assigned devices and export the active subset to PDF."
+        title="Inventory items"
+      />
 
       <div className="grid grid-cols-1 gap-3.5 border-b border-slate-200 bg-slate-50/70 px-6 py-4 md:grid-cols-[180px_minmax(220px,1fr)_240px]">
-        <label className="grid gap-1.5 text-sm font-bold text-slate-700">
-          <span>Type</span>
-          <select
-            className={controlClass}
+        <Field label="Type">
+          <Select
             value={filters.type}
             onChange={(event) => setFilters((current) => ({ ...current, type: event.target.value as InventoryFilters["type"] }))}
           >
@@ -98,23 +109,19 @@ export function InventoryPage({ users }: InventoryPageProps) {
                 {formatItemType(type)}
               </option>
             ))}
-          </select>
-        </label>
+          </Select>
+        </Field>
 
-        <label className="grid gap-1.5 text-sm font-bold text-slate-700">
-          <span>Comment</span>
-          <input
-            className={controlClass}
+        <Field label="Comment">
+          <TextInput
             value={filters.comment}
             onChange={(event) => setFilters((current) => ({ ...current, comment: event.target.value }))}
             placeholder="Search comment"
           />
-        </label>
+        </Field>
 
-        <label className="grid gap-1.5 text-sm font-bold text-slate-700">
-          <span>User</span>
-          <select
-            className={controlClass}
+        <Field label="User">
+          <Select
             value={filters.userId}
             onChange={(event) => setFilters((current) => ({ ...current, userId: event.target.value }))}
           >
@@ -124,61 +131,82 @@ export function InventoryPage({ users }: InventoryPageProps) {
                 {user.firstName} {user.lastName}
               </option>
             ))}
-          </select>
-        </label>
+          </Select>
+        </Field>
       </div>
 
-      {error && <div className="m-4 rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-red-800">{error}</div>}
+      {error && <ErrorBanner className="m-4" message={error} />}
 
-      <div className="w-full overflow-x-auto">
-        <table className="w-full min-w-[900px] border-collapse">
+      <TableWrap>
+        <DataTable>
+          <colgroup>
+            <col className="w-[12%]" />
+            <col className="w-[16%]" />
+            <col className="w-[20%]" />
+            <col className="w-[18%]" />
+            <col className="w-[12%]" />
+            <col className="w-[10%]" />
+            <col className="w-[12%]" />
+          </colgroup>
           <thead>
             <tr>
-              <th className={tableHeaderClass}>Type</th>
-              <th className={tableHeaderClass}>Identifier</th>
-              <th className={tableHeaderClass}>Comment</th>
-              <th className={tableHeaderClass}>Assigned user</th>
-              <th className={tableHeaderClass}>Purchase date</th>
-              <th className={tableHeaderClass}>Status</th>
-              <th className={tableHeaderClass}>Actions</th>
+              <TableHeaderCell>Type</TableHeaderCell>
+              <TableHeaderCell>Identifier</TableHeaderCell>
+              <TableHeaderCell>Comment</TableHeaderCell>
+              <TableHeaderCell>Assigned user</TableHeaderCell>
+              <TableHeaderCell>Purchase date</TableHeaderCell>
+              <TableHeaderCell>Status</TableHeaderCell>
+              <TableHeaderCell>Actions</TableHeaderCell>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
-                <td className={`${tableCellClass} text-slate-700`} colSpan={7}>
+                <TableCell className="text-slate-700" colSpan={7}>
                   Loading inventory...
-                </td>
+                </TableCell>
+              </tr>
+            ) : paginatedItems.length === 0 ? (
+              <tr>
+                <TableCell className="text-slate-700" colSpan={7}>
+                  No inventory items found.
+                </TableCell>
               </tr>
             ) : (
-              items.map((item) => (
+              paginatedItems.map((item) => (
                 <tr key={item.id} className={item.isActive ? "text-slate-700" : "bg-slate-50 text-slate-400"}>
-                  <td className={tableCellClass}>{formatItemType(item.type)}</td>
-                  <td className={tableCellClass}>{item.uniqueIdentifier}</td>
-                  <td className={tableCellClass}>{item.comment ?? "-"}</td>
-                  <td className={tableCellClass}>
-                    {item.assignedUserName}
-                    <span className="mt-1 block text-xs text-slate-500">{item.assignedUserIdentifier}</span>
-                  </td>
-                  <td className={tableCellClass}>{item.purchaseDate}</td>
-                  <td className={tableCellClass}>
+                  <TableCell>{formatItemType(item.type)}</TableCell>
+                  <TableCell>{item.uniqueIdentifier}</TableCell>
+                  <TableCell>{item.comment ?? "-"}</TableCell>
+                  <TableCell>{item.assignedUserName}</TableCell>
+                  <TableCell>{item.purchaseDate}</TableCell>
+                  <TableCell>
                     <StatusBadge isActive={item.isActive} />
-                  </td>
-                  <td className={tableCellClass}>
-                    <button
-                      className="min-h-10 rounded-md border border-red-200 bg-red-50 px-3.5 font-extrabold text-red-800"
-                      onClick={() => void handleSoftDelete(item.id)}
+                  </TableCell>
+                  <TableCell>
+                    <Button
                       disabled={!item.isActive}
+                      onClick={() => void handleSoftDelete(item.id)}
+                      variant="danger"
                     >
                       Delete
-                    </button>
-                  </td>
+                    </Button>
+                  </TableCell>
                 </tr>
               ))
             )}
           </tbody>
-        </table>
-      </div>
+        </DataTable>
+      </TableWrap>
+
+      {!isLoading && (
+        <Pagination
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          pageSize={pagination.inventoryItemsPageSize}
+          totalItems={items.length}
+        />
+      )}
 
       <TemplateDialog
         isOpen={isExportDialogOpen}
@@ -186,6 +214,6 @@ export function InventoryPage({ users }: InventoryPageProps) {
         onClose={() => setExportDialogOpen(false)}
         onExport={(template) => void handleExport(template)}
       />
-    </section>
+    </PagePanel>
   );
 }

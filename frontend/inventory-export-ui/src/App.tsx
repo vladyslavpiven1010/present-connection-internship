@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { getUsers } from "./api/client";
+import { Button } from "./components/ui/Button";
+import { ErrorBanner } from "./components/ui/ErrorBanner";
 import { InventoryPage } from "./pages/InventoryPage";
 import { UsersPage } from "./pages/UsersPage";
 import type { ActivePage, User } from "./types";
@@ -32,30 +34,26 @@ export function App() {
         </div>
 
         <nav className="flex gap-2 rounded-lg border border-slate-200 bg-white p-1" aria-label="Main navigation">
-          <button
-            className={
-              activePage === "inventory"
-                ? "w-full rounded-md bg-blue-600 px-4 py-2.5 font-bold text-white sm:w-auto"
-                : "w-full rounded-md px-4 py-2.5 font-bold text-slate-500 sm:w-auto"
-            }
+          <Button
+            className="w-full sm:w-auto"
+            isActive={activePage === "inventory"}
             onClick={() => setActivePage("inventory")}
+            variant="tab"
           >
             Inventory
-          </button>
-          <button
-            className={
-              activePage === "users"
-                ? "w-full rounded-md bg-blue-600 px-4 py-2.5 font-bold text-white sm:w-auto"
-                : "w-full rounded-md px-4 py-2.5 font-bold text-slate-500 sm:w-auto"
-            }
+          </Button>
+          <Button
+            className="w-full sm:w-auto"
+            isActive={activePage === "users"}
             onClick={() => setActivePage("users")}
+            variant="tab"
           >
             Users
-          </button>
+          </Button>
         </nav>
       </header>
 
-      {error && <div className="mb-3.5 rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-red-800">{error}</div>}
+      {error && <ErrorBanner className="mb-3.5" message={error} />}
 
       {activePage === "inventory" ? (
         <InventoryPage users={users} />

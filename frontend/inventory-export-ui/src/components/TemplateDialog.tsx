@@ -1,3 +1,4 @@
+import { Button } from "./ui/Button";
 import type { PdfTemplate } from "../types";
 
 interface TemplateDialogProps {
@@ -6,6 +7,26 @@ interface TemplateDialogProps {
   onClose: () => void;
   onExport: (template: PdfTemplate) => void;
 }
+
+const templateOptions: Array<{
+  accentClass: string;
+  description: string;
+  label: string;
+  value: PdfTemplate;
+}> = [
+  {
+    accentClass: "border-t-blue-600",
+    description: "Detailed table with blue header.",
+    label: "Classic",
+    value: "Classic"
+  },
+  {
+    accentClass: "border-t-emerald-600",
+    description: "Grouped by assigned user.",
+    label: "Compact",
+    value: "Compact"
+  }
+];
 
 export function TemplateDialog({
   isOpen,
@@ -33,32 +54,22 @@ export function TemplateDialog({
         </div>
 
         <div className="my-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <button
-            className="grid min-h-32 content-end gap-1.5 rounded-lg border border-slate-200 border-t-[10px] border-t-blue-600 bg-white p-4 text-left"
-            onClick={() => onExport("Classic")}
-            disabled={isExporting}
-          >
-            <strong className="text-lg text-slate-900">Classic</strong>
-            <span className="text-slate-500">Detailed table with blue header.</span>
-          </button>
-
-          <button
-            className="grid min-h-32 content-end gap-1.5 rounded-lg border border-slate-200 border-t-[10px] border-t-emerald-600 bg-white p-4 text-left"
-            onClick={() => onExport("Compact")}
-            disabled={isExporting}
-          >
-            <strong className="text-lg text-slate-900">Compact</strong>
-            <span className="text-slate-500">Grouped by assigned user.</span>
-          </button>
+          {templateOptions.map((option) => (
+            <button
+              className={`grid min-h-32 content-end gap-1.5 rounded-lg border border-slate-200 border-t-[10px] bg-white p-4 text-left ${option.accentClass}`}
+              disabled={isExporting}
+              key={option.value}
+              onClick={() => onExport(option.value)}
+            >
+              <strong className="text-lg text-slate-900">{option.label}</strong>
+              <span className="text-slate-500">{option.description}</span>
+            </button>
+          ))}
         </div>
 
-        <button
-          className="min-h-10 rounded-md border border-slate-300 bg-white px-4 font-extrabold text-slate-700"
-          onClick={onClose}
-          disabled={isExporting}
-        >
+        <Button disabled={isExporting} onClick={onClose} variant="secondary">
           Cancel
-        </button>
+        </Button>
       </div>
     </div>
   );
