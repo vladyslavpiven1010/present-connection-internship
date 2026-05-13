@@ -1,0 +1,16 @@
+@InventoryExport.Api_HostAddress = http://localhost:5087
+
+GET {{InventoryExport.Api_HostAddress}}/api/users
+Accept: application/json
+
+###
+
+GET {{InventoryExport.Api_HostAddress}}/api/inventory-items?type=Laptop
+Accept: application/json
+
+###
+
+GET {{InventoryExport.Api_HostAddress}}/api/export/pdf?template=Classic&type=Laptop
+Accept: application/pdf
+
+###
