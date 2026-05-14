@@ -1,13 +1,14 @@
 using System.ComponentModel.DataAnnotations;
+using InventoryExport.Api.Common;
 using InventoryExport.Api.Entities;
 
 namespace InventoryExport.Api.Dtos;
 
-public sealed class InventoryItemFilterDto : IValidatableObject
+public sealed class InventoryItemFilterDto : PaginationQueryDto, IValidatableObject
 {
     public InventoryItemType? Type { get; init; }
 
-    [StringLength(200)]
+    [StringLength(AppConstants.Validation.MaxCommentLength)]
     public string? Comment { get; init; }
 
     public Guid? UserId { get; init; }

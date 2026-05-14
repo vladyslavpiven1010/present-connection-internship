@@ -4,7 +4,7 @@ namespace InventoryExport.Api.Services;
 
 public interface IInventoryService
 {
-    Task<IReadOnlyList<InventoryItemDto>> GetItemsAsync(
+    Task<PaginatedResponse<InventoryItemDto>> GetItemsAsync(
         InventoryItemFilterDto filter,
         bool includeInactive,
         CancellationToken cancellationToken);

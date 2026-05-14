@@ -1,3 +1,4 @@
+using InventoryExport.Api.Common;
 using InventoryExport.Api.Data;
 using InventoryExport.Api.Pdf;
 using InventoryExport.Api.Services;
@@ -17,17 +18,17 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("Frontend", policy =>
+    options.AddPolicy(AppConstants.FrontendCorsPolicyName, policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173")
+            .WithOrigins(AppConstants.FrontendOrigin)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
 });
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseInMemoryDatabase("InventoryExportDb"));
+    options.UseInMemoryDatabase(AppConstants.DatabaseName));
 
 builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
@@ -43,7 +44,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors("Frontend");
+app.UseCors(AppConstants.FrontendCorsPolicyName);
 app.MapControllers();
 
 using (var scope = app.Services.CreateScope())

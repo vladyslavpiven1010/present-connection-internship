@@ -5,19 +5,17 @@ interface PaginationProps {
   onPageChange: (page: number) => void;
   pageSize: number;
   totalItems: number;
+  totalPages: number;
 }
 
-function getPageNumbers(currentPage: number, totalPages: number): number[] {
-  const start = Math.max(1, currentPage - 1);
-  const end = Math.min(totalPages, start + 2);
-  const normalizedStart = Math.max(1, end - 2);
+export function Pagination({ currentPage, onPageChange, pageSize, totalItems, totalPages }: PaginationProps) {
+  if (totalPages <= 1) {
+    return null;
+  }
 
-  return Array.from({ length: end - normalizedStart + 1 }, (_, index) => normalizedStart + index);
-}
-
-export function Pagination({ currentPage, onPageChange, pageSize, totalItems }: PaginationProps) {
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  const firstItem = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const firstItem = totalItems === 0
+    ? 0
+    : (currentPage - 1) * pageSize + 1;
   const lastItem = Math.min(currentPage * pageSize, totalItems);
 
   return (
@@ -26,7 +24,7 @@ export function Pagination({ currentPage, onPageChange, pageSize, totalItems }: 
         Showing {firstItem}-{lastItem} of {totalItems}
       </span>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button
           disabled={currentPage === 1}
           onClick={() => onPageChange(currentPage - 1)}
@@ -35,17 +33,9 @@ export function Pagination({ currentPage, onPageChange, pageSize, totalItems }: 
           Previous
         </Button>
 
-        {getPageNumbers(currentPage, totalPages).map((page) => (
-          <Button
-            className="min-w-10 px-3"
-            isActive={page === currentPage}
-            key={page}
-            onClick={() => onPageChange(page)}
-            variant="tab"
-          >
-            {page}
-          </Button>
-        ))}
+        <span className="px-2 font-semibold text-slate-700">
+          Page {currentPage} of {totalPages}
+        </span>
 
         <Button
           disabled={currentPage === totalPages}

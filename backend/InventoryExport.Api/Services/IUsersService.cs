@@ -4,5 +4,5 @@ namespace InventoryExport.Api.Services;
 
 public interface IUsersService
 {
-    Task<IReadOnlyList<UserDto>> GetAllAsync(CancellationToken cancellationToken);
+    Task<PaginatedResponse<UserDto>> GetAllAsync(UsersQueryDto query, CancellationToken cancellationToken);
 }

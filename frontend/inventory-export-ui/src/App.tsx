@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getUsers } from "./api/client";
 import { Button } from "./components/ui/Button";
 import { ErrorBanner } from "./components/ui/ErrorBanner";
+import { pagination } from "./constants/pagination";
 import { InventoryPage } from "./pages/InventoryPage";
 import { UsersPage } from "./pages/UsersPage";
 import type { ActivePage, User } from "./types";
@@ -9,17 +10,18 @@ import type { ActivePage, User } from "./types";
 export function App() {
   const [activePage, setActivePage] = useState<ActivePage>("inventory");
   const [users, setUsers] = useState<User[]>([]);
-  const [isUsersLoading, setUsersLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadUsers() {
       try {
-        setUsers(await getUsers());
+        const response = await getUsers({
+          page: 1,
+          pageSize: pagination.usersSelectPageSize
+        });
+        setUsers(response.items);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load users.");
-      } finally {
-        setUsersLoading(false);
       }
     }
 
@@ -58,7 +60,7 @@ export function App() {
       {activePage === "inventory" ? (
         <InventoryPage users={users} />
       ) : (
-        <UsersPage users={users} isLoading={isUsersLoading} />
+        <UsersPage />
       )}
     </main>
   );

@@ -31,6 +31,19 @@ export interface InventoryFilters {
   userId?: string;
 }
 
+export interface PaginationQuery {
+  page: number;
+  pageSize: number;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+}
+
 export function formatItemType(type: ItemType): string {
   return type === "SimCard" ? "SIM card" : type;
 }

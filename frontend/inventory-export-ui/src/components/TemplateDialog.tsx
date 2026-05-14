@@ -15,14 +15,14 @@ const templateOptions: Array<{
   value: PdfTemplate;
 }> = [
   {
-    accentClass: "border-t-blue-600",
-    description: "Detailed table with blue header.",
+    accentClass: "border-t-emerald-600",
+    description: "Grouped by assigned user.",
     label: "Classic",
     value: "Classic"
   },
   {
-    accentClass: "border-t-emerald-600",
-    description: "Grouped by assigned user.",
+    accentClass: "border-t-blue-600",
+    description: "Detailed table with blue header.",
     label: "Compact",
     value: "Compact"
   }

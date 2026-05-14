@@ -15,81 +15,65 @@ public sealed class ClassicInventoryPdfTemplate : IInventoryPdfTemplate
         {
             container.Page(page =>
             {
-                page.Margin(36);
+                page.Margin(PdfLayoutConstants.Classic.PageMargin);
                 page.Size(PageSizes.A4);
+                page.DefaultTextStyle(style => style.FontSize(PdfLayoutConstants.Common.BodyFontSize));
 
-                page.Header().Column(column =>
+                page.Header().Row(row =>
                 {
-                    column.Item().Text("Inventory Export")
-                        .FontSize(24)
-                        .SemiBold()
-                        .FontColor(Colors.Blue.Darken3);
+                    row.RelativeItem().Column(column =>
+                    {
+                        column.Item().Text("Assigned Inventory")
+                            .FontSize(PdfLayoutConstants.Classic.TitleFontSize)
+                            .Bold();
+                        column.Item().Text("Classic grouped template")
+                            .FontColor(Colors.Grey.Darken1);
+                    });
 
-                    column.Item().Text($"Generated: {document.GeneratedAt:yyyy-MM-dd HH:mm} UTC")
-                        .FontSize(9)
-                        .FontColor(Colors.Grey.Darken1);
+                    row.ConstantItem(PdfLayoutConstants.Classic.CountColumnWidth)
+                        .AlignRight()
+                        .Text($"{document.Items.Count} items")
+                        .FontSize(PdfLayoutConstants.Classic.CountFontSize)
+                        .Bold()
+                        .FontColor(Colors.Green.Darken2);
                 });
 
-                page.Content().PaddingTop(20).Table(table =>
+                page.Content().PaddingTop(PdfLayoutConstants.Classic.ContentTopPadding).Column(column =>
                 {
-                    table.ColumnsDefinition(columns =>
-                    {
-                        columns.RelativeColumn(1.1f);
-                        columns.RelativeColumn(1.4f);
-                        columns.RelativeColumn(1.8f);
-                        columns.RelativeColumn(1.7f);
-                        columns.RelativeColumn(1.2f);
-                    });
+                    var groups = document.Items.GroupBy(item => item.AssignedUserName);
 
-                    table.Header(header =>
+                    foreach (var group in groups)
                     {
-                        Header(header.Cell(), "Type");
-                        Header(header.Cell(), "Identifier");
-                        Header(header.Cell(), "Comment");
-                        Header(header.Cell(), "Assigned user");
-                        Header(header.Cell(), "Purchase date");
-                    });
+                        column.Item()
+                            .Background(Colors.Green.Lighten4)
+                            .Padding(PdfLayoutConstants.Classic.GroupHeaderPadding)
+                            .Text(group.Key)
+                            .SemiBold()
+                            .FontColor(Colors.Green.Darken3);
 
-                    foreach (var item in document.Items)
-                    {
-                        Cell(table.Cell(), item.Type);
-                        Cell(table.Cell(), item.UniqueIdentifier);
-                        Cell(table.Cell(), item.Comment ?? "-");
-                        Cell(table.Cell(), $"{item.AssignedUserName} ({item.AssignedUserIdentifier})");
-                        Cell(table.Cell(), item.PurchaseDate.ToString("yyyy-MM-dd"));
+                        foreach (var item in group)
+                        {
+                            column.Item()
+                                .BorderBottom(PdfLayoutConstants.Common.ThinBorder)
+                                .BorderColor(Colors.Grey.Lighten2)
+                                .PaddingVertical(PdfLayoutConstants.Classic.ItemVerticalPadding)
+                                .Row(row =>
+                                {
+                                    row.RelativeItem(PdfLayoutConstants.Classic.TypeColumnWidth).Text(item.Type).SemiBold();
+                                    row.RelativeItem(PdfLayoutConstants.Classic.IdentifierColumnWidth).Text(item.UniqueIdentifier);
+                                    row.RelativeItem(PdfLayoutConstants.Classic.CommentColumnWidth).Text(item.Comment ?? "-");
+                                    row.RelativeItem(PdfLayoutConstants.Classic.PurchaseDateColumnWidth).AlignRight().Text(item.PurchaseDate.ToString("yyyy-MM-dd"));
+                                });
+                        }
+
+                        column.Item().PaddingBottom(PdfLayoutConstants.Classic.GroupBottomPadding);
                     }
                 });
 
                 page.Footer()
-                    .AlignRight()
-                    .Text(text =>
-                    {
-                        text.Span("Classic template - page ");
-                        text.CurrentPageNumber();
-                        text.Span(" / ");
-                        text.TotalPages();
-                    });
+                    .AlignCenter()
+                    .Text($"Classic template - generated {document.GeneratedAt:yyyy-MM-dd}");
             });
         }).GeneratePdf();
-    }
-
-    private static void Header(IContainer container, string text)
-    {
-        container
-            .Background(Colors.Blue.Darken2)
-            .Padding(6)
-            .DefaultTextStyle(style => style.FontColor(Colors.White).SemiBold().FontSize(9))
-            .Text(text);
-    }
-
-    private static void Cell(IContainer container, string text)
-    {
-        container
-            .BorderBottom(1)
-            .BorderColor(Colors.Grey.Lighten2)
-            .PaddingVertical(6)
-            .PaddingHorizontal(4)
-            .DefaultTextStyle(style => style.FontSize(9))
-            .Text(text);
     }
 }

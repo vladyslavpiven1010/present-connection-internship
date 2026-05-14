@@ -1,22 +1,42 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { getUsers } from "../api/client";
 import { DataTable, TableCell, TableHeaderCell, TableWrap } from "../components/ui/DataTable";
+import { ErrorBanner } from "../components/ui/ErrorBanner";
 import { PagePanel, PanelHeader } from "../components/ui/PagePanel";
 import { Pagination } from "../components/ui/Pagination";
 import { pagination } from "../constants/pagination";
 import type { User } from "../types";
 
-interface UsersPageProps {
-  users: User[];
-  isLoading: boolean;
-}
-
-export function UsersPage({ users, isLoading }: UsersPageProps) {
+export function UsersPage() {
+  const [users, setUsers] = useState<User[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const totalPages = Math.max(1, Math.ceil(users.length / pagination.usersPageSize));
-  const paginatedUsers = useMemo(() => {
-    const startIndex = (currentPage - 1) * pagination.usersPageSize;
-    return users.slice(startIndex, startIndex + pagination.usersPageSize);
-  }, [currentPage, users]);
+  const [totalItems, setTotalItems] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [isLoading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadUsers() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await getUsers({
+          page: currentPage,
+          pageSize: pagination.usersPageSize
+        });
+        setUsers(response.items);
+        setTotalItems(response.totalItems);
+        setTotalPages(response.totalPages);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load users.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    void loadUsers();
+  }, [currentPage]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -27,10 +47,11 @@ export function UsersPage({ users, isLoading }: UsersPageProps) {
   return (
     <PagePanel>
       <PanelHeader
-        badge={<span className="w-fit rounded-full bg-blue-50 px-3 py-1.5 font-bold text-blue-700">{users.length} users</span>}
         description="People who can have assigned inventory items."
         title="Users"
       />
+
+      {error && <ErrorBanner className="m-4" message={error} />}
 
       <TableWrap>
         <DataTable>
@@ -53,14 +74,14 @@ export function UsersPage({ users, isLoading }: UsersPageProps) {
                   Loading users...
                 </TableCell>
               </tr>
-            ) : paginatedUsers.length === 0 ? (
+            ) : users.length === 0 ? (
               <tr>
                 <TableCell className="text-slate-700" colSpan={3}>
                   No users found.
                 </TableCell>
               </tr>
             ) : (
-              paginatedUsers.map((user) => (
+              users.map((user) => (
                 <tr key={user.id}>
                   <TableCell className="text-slate-700">{user.firstName}</TableCell>
                   <TableCell className="text-slate-700">{user.lastName}</TableCell>
@@ -77,7 +98,8 @@ export function UsersPage({ users, isLoading }: UsersPageProps) {
           currentPage={currentPage}
           onPageChange={setCurrentPage}
           pageSize={pagination.usersPageSize}
-          totalItems={users.length}
+          totalItems={totalItems}
+          totalPages={totalPages}
         />
       )}
     </PagePanel>

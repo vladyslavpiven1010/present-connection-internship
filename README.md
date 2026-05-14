@@ -26,14 +26,26 @@ http://localhost:5087/swagger
 Main endpoints:
 
 ```txt
-GET    /api/users
-GET    /api/inventory-items?type=&comment=&userId=
+GET    /api/users?page=1&pageSize=10
+GET    /api/inventory-items?page=1&pageSize=10&type=&comment=&userId=
 DELETE /api/inventory-items/{id}
 GET    /api/export/pdf?template=Classic&type=&comment=&userId=
 ```
 
 Soft delete sets `InventoryItem.IsActive = false`. Inactive items remain visible in
 the UI, but the export service always excludes them.
+
+List endpoints return paginated responses:
+
+```json
+{
+  "items": [],
+  "page": 1,
+  "pageSize": 10,
+  "totalItems": 0,
+  "totalPages": 1
+}
+```
 
 ## Frontend
 

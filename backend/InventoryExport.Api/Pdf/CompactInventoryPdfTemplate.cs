@@ -15,65 +15,81 @@ public sealed class CompactInventoryPdfTemplate : IInventoryPdfTemplate
         {
             container.Page(page =>
             {
-                page.Margin(28);
+                page.Margin(PdfLayoutConstants.Compact.PageMargin);
                 page.Size(PageSizes.A4);
-                page.DefaultTextStyle(style => style.FontSize(9));
 
-                page.Header().Row(row =>
+                page.Header().Column(column =>
                 {
-                    row.RelativeItem().Column(column =>
-                    {
-                        column.Item().Text("Assigned Inventory")
-                            .FontSize(20)
-                            .Bold();
-                        column.Item().Text("Compact grouped template")
-                            .FontColor(Colors.Grey.Darken1);
-                    });
+                    column.Item().Text("Inventory Export")
+                        .FontSize(PdfLayoutConstants.Compact.HeaderFontSize)
+                        .SemiBold()
+                        .FontColor(Colors.Blue.Darken3);
 
-                    row.ConstantItem(90)
-                        .AlignRight()
-                        .Text($"{document.Items.Count} items")
-                        .FontSize(16)
-                        .Bold()
-                        .FontColor(Colors.Green.Darken2);
+                    column.Item().Text($"Generated: {document.GeneratedAt:yyyy-MM-dd HH:mm} UTC")
+                        .FontSize(PdfLayoutConstants.Common.BodyFontSize)
+                        .FontColor(Colors.Grey.Darken1);
                 });
 
-                page.Content().PaddingTop(18).Column(column =>
+                page.Content().PaddingTop(PdfLayoutConstants.Compact.ContentTopPadding).Table(table =>
                 {
-                    var groups = document.Items.GroupBy(item => item.AssignedUserName);
-
-                    foreach (var group in groups)
+                    table.ColumnsDefinition(columns =>
                     {
-                        column.Item()
-                            .Background(Colors.Green.Lighten4)
-                            .Padding(8)
-                            .Text(group.Key)
-                            .SemiBold()
-                            .FontColor(Colors.Green.Darken3);
+                        columns.RelativeColumn(PdfLayoutConstants.Compact.TypeColumnWidth);
+                        columns.RelativeColumn(PdfLayoutConstants.Compact.IdentifierColumnWidth);
+                        columns.RelativeColumn(PdfLayoutConstants.Compact.CommentColumnWidth);
+                        columns.RelativeColumn(PdfLayoutConstants.Compact.AssignedUserColumnWidth);
+                        columns.RelativeColumn(PdfLayoutConstants.Compact.PurchaseDateColumnWidth);
+                    });
 
-                        foreach (var item in group)
-                        {
-                            column.Item()
-                                .BorderBottom(1)
-                                .BorderColor(Colors.Grey.Lighten2)
-                                .PaddingVertical(7)
-                                .Row(row =>
-                                {
-                                    row.RelativeItem(1).Text(item.Type).SemiBold();
-                                    row.RelativeItem(1.4f).Text(item.UniqueIdentifier);
-                                    row.RelativeItem(2).Text(item.Comment ?? "-");
-                                    row.RelativeItem(1).AlignRight().Text(item.PurchaseDate.ToString("yyyy-MM-dd"));
-                                });
-                        }
+                    table.Header(header =>
+                    {
+                        Header(header.Cell(), "Type");
+                        Header(header.Cell(), "Identifier");
+                        Header(header.Cell(), "Comment");
+                        Header(header.Cell(), "Assigned user");
+                        Header(header.Cell(), "Purchase date");
+                    });
 
-                        column.Item().PaddingBottom(10);
+                    foreach (var item in document.Items)
+                    {
+                        Cell(table.Cell(), item.Type);
+                        Cell(table.Cell(), item.UniqueIdentifier);
+                        Cell(table.Cell(), item.Comment ?? "-");
+                        Cell(table.Cell(), $"{item.AssignedUserName} ({item.AssignedUserIdentifier})");
+                        Cell(table.Cell(), item.PurchaseDate.ToString("yyyy-MM-dd"));
                     }
                 });
 
                 page.Footer()
-                    .AlignCenter()
-                    .Text($"Compact template - generated {document.GeneratedAt:yyyy-MM-dd}");
+                    .AlignRight()
+                    .Text(text =>
+                    {
+                        text.Span("Compact template - page ");
+                        text.CurrentPageNumber();
+                        text.Span(" / ");
+                        text.TotalPages();
+                    });
             });
         }).GeneratePdf();
+    }
+
+    private static void Header(IContainer container, string text)
+    {
+        container
+            .Background(Colors.Blue.Darken2)
+            .Padding(PdfLayoutConstants.Compact.HeaderPadding)
+            .DefaultTextStyle(style => style.FontColor(Colors.White).SemiBold().FontSize(PdfLayoutConstants.Common.BodyFontSize))
+            .Text(text);
+    }
+
+    private static void Cell(IContainer container, string text)
+    {
+        container
+            .BorderBottom(PdfLayoutConstants.Common.ThinBorder)
+            .BorderColor(Colors.Grey.Lighten2)
+            .PaddingVertical(PdfLayoutConstants.Compact.CellVerticalPadding)
+            .PaddingHorizontal(PdfLayoutConstants.Compact.CellHorizontalPadding)
+            .DefaultTextStyle(style => style.FontSize(PdfLayoutConstants.Common.BodyFontSize))
+            .Text(text);
     }
 }

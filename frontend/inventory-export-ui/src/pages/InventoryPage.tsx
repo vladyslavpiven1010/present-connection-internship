@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { exportInventoryPdf, getInventoryItems, softDeleteInventoryItem } from "../api/client";
 import { StatusBadge } from "../components/StatusBadge";
 import { TemplateDialog } from "../components/TemplateDialog";
@@ -28,20 +28,22 @@ export function InventoryPage({ users }: InventoryPageProps) {
   const [isExportDialogOpen, setExportDialogOpen] = useState<boolean>(false);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalItems, setTotalItems] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(1);
   const [error, setError] = useState<string | null>(null);
-  const totalPages = Math.max(1, Math.ceil(items.length / pagination.inventoryItemsPageSize));
-  const paginatedItems = useMemo(() => {
-    const startIndex = (currentPage - 1) * pagination.inventoryItemsPageSize;
-    return items.slice(startIndex, startIndex + pagination.inventoryItemsPageSize);
-  }, [currentPage, items]);
 
   async function loadItems() {
     setIsLoading(true);
     setError(null);
 
     try {
-      const result = await getInventoryItems(filters);
-      setItems(result);
+      const result = await getInventoryItems(filters, {
+        page: currentPage,
+        pageSize: pagination.inventoryItemsPageSize
+      });
+      setItems(result.items);
+      setTotalItems(result.totalItems);
+      setTotalPages(result.totalPages);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load inventory items.");
     } finally {
@@ -50,9 +52,13 @@ export function InventoryPage({ users }: InventoryPageProps) {
   }
 
   useEffect(() => {
-    setCurrentPage(1);
     void loadItems();
-  }, [filters.type, filters.comment, filters.userId]);
+  }, [currentPage, filters.type, filters.comment, filters.userId]);
+
+  function updateFilters(nextFilters: InventoryFilters) {
+    setCurrentPage(1);
+    setFilters(nextFilters);
+  }
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -101,7 +107,7 @@ export function InventoryPage({ users }: InventoryPageProps) {
         <Field label="Type">
           <Select
             value={filters.type}
-            onChange={(event) => setFilters((current) => ({ ...current, type: event.target.value as InventoryFilters["type"] }))}
+            onChange={(event) => updateFilters({ ...filters, type: event.target.value as InventoryFilters["type"] })}
           >
             <option value="">All types</option>
             {itemTypes.map((type) => (
@@ -115,7 +121,7 @@ export function InventoryPage({ users }: InventoryPageProps) {
         <Field label="Comment">
           <TextInput
             value={filters.comment}
-            onChange={(event) => setFilters((current) => ({ ...current, comment: event.target.value }))}
+            onChange={(event) => updateFilters({ ...filters, comment: event.target.value })}
             placeholder="Search comment"
           />
         </Field>
@@ -123,7 +129,7 @@ export function InventoryPage({ users }: InventoryPageProps) {
         <Field label="User">
           <Select
             value={filters.userId}
-            onChange={(event) => setFilters((current) => ({ ...current, userId: event.target.value }))}
+            onChange={(event) => updateFilters({ ...filters, userId: event.target.value })}
           >
             <option value="">All users</option>
             {users.map((user) => (
@@ -166,14 +172,14 @@ export function InventoryPage({ users }: InventoryPageProps) {
                   Loading inventory...
                 </TableCell>
               </tr>
-            ) : paginatedItems.length === 0 ? (
+            ) : items.length === 0 ? (
               <tr>
                 <TableCell className="text-slate-700" colSpan={7}>
                   No inventory items found.
                 </TableCell>
               </tr>
             ) : (
-              paginatedItems.map((item) => (
+              items.map((item) => (
                 <tr key={item.id} className={item.isActive ? "text-slate-700" : "bg-slate-50 text-slate-400"}>
                   <TableCell>{formatItemType(item.type)}</TableCell>
                   <TableCell>{item.uniqueIdentifier}</TableCell>
@@ -204,7 +210,8 @@ export function InventoryPage({ users }: InventoryPageProps) {
           currentPage={currentPage}
           onPageChange={setCurrentPage}
           pageSize={pagination.inventoryItemsPageSize}
-          totalItems={items.length}
+          totalItems={totalItems}
+          totalPages={totalPages}
         />
       )}
 
